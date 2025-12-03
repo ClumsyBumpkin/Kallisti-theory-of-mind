@@ -1,0 +1,50 @@
+# Kallisti memory 
+
+import time
+import math
+from typing import Iterable, Any, Dict
+import numpy as np
+from .similarity import cosine
+
+
+class MemoryInstance:
+    def __init__(self, features: Iterable[float], action: Any, reward: float, t=None):
+        self.features = np.asarray(features, dtype=float)
+        self.action = action
+        self.reward = float(reward)
+        self.t = time.time() if t is None else float(t)
+
+
+class Memory:
+    def __init__(self, decay: float = 0.5, sim_weight: float = 1.0):
+        self.instances: list[MemoryInstance] = []
+        self.decay = float(decay)
+        self.sim_weight = float(sim_weight)
+
+    def add(self, features: Iterable[float], action: Any, reward: float, t=None):
+        self.instances.append(MemoryInstance(features, action, reward, t))
+
+    def _base_level(self, inst: MemoryInstance, now: float) -> float:
+        dt = max(now - inst.t, 1e-3)
+        return -self.decay * math.log(dt)
+
+    def _similarity(self, q: np.ndarray, x: np.ndarray) -> float:
+        return cosine(q, x)
+
+    def score_actions(self, query_features: Iterable[float], now: float | None = None) -> Dict[Any, float]:
+        now = time.time() if now is None else now
+        q = np.asarray(query_features, dtype=float)
+        if q.ndim != 1:
+            q = q.flatten()
+
+        scores: Dict[Any, float] = {}
+
+        for inst in self.instances:
+            base = self._base_level(inst, now)
+            sim = self._similarity(q, inst.features)
+            activation = base + self.sim_weight * sim
+
+            prev = scores.get(inst.action, 0.0)
+            scores[inst.action] = prev + activation * inst.reward
+
+        return scores
