@@ -1,0 +1,51 @@
+# RL agent with memory, uses similarity + base-level activation to compute a score for each action.
+
+# SoftMax decision mechanism.
+
+# Imports 
+from typing import Any, Dict, Iterable
+import numpy as np
+
+from .memory import Memory # Memory module import :)
+
+
+def softmax(scores: Dict[Any, float], temperature: float = 1.0) -> Dict[Any, float]: # takes raw scores to probabilities 
+    if not scores:
+        return {}
+    actions = list(scores.keys())
+    vals = np.array(list(scores.values()), dtype=float)
+    vals = vals / max(temperature, 1e-6)
+    vals = vals - vals.max()
+    exps = np.exp(vals)
+    probs = exps / (exps.sum() + 1e-12)
+    return {a: float(p) for a, p in zip(actions, probs)}
+
+
+class KallistiAgent:
+    def __init__(self, memory: Memory | None = None, temperature: float = 1.0): #temperature = personality
+        self.memory = memory or Memory()
+        self.temperature = float(temperature)
+
+    def observe(self, features: Iterable[float], action: Any, reward: float, t=None) -> None:
+        self.memory.add(features, action, reward, t)
+
+    def action_scores(self, query_features: Iterable[float]) -> Dict[Any, float]:
+        return self.memory.score_actions(query_features)
+
+    def policy(self, query_features: Iterable[float]) -> Dict[Any, float]:
+        scores = self.action_scores(query_features)
+        return softmax(scores, temperature=self.temperature)
+
+    def choose_action(self, query_features: Iterable[float], greedy: bool = True) -> Any:
+        probs = self.policy(query_features)
+        if not probs:
+            return None
+
+        if greedy:
+            return max(probs.items(), key=lambda kv: kv[1])[0]
+
+        actions = list(probs.keys())
+        vals = np.array(list(probs.values()), dtype=float)
+        vals = vals / (vals.sum() + 1e-12)
+        idx = np.random.choice(len(actions), p=vals)
+        return actions[idx]
