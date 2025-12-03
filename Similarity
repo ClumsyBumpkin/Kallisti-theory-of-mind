@@ -1,0 +1,32 @@
+# Utility module - goal - defines how we measure similarity between vectors 
+# When an agent tries to recall memory similarity asks how similar is this new situation to the past situation 
+
+import numpy as np
+
+# Cosine measure angles between two vectors 
+def cosine(a, b):
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    denom = (np.linalg.norm(a) * np.linalg.norm(b)) + 1e-8
+    return float(np.dot(a, b) / denom)
+    
+# Geometric distance between the vectors how far apart are the vectors 
+def euclidean(a, b):
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    return -float(np.linalg.norm(a - b))  # negative so higher = more similar
+
+# Pattern similarity 
+def correlation(a, b):
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    a = a - a.mean()
+    b = b - b.mean()
+    denom = (np.linalg.norm(a) * np.linalg.norm(b)) + 1e-8
+    return float(np.dot(a, b) / denom)
+
+SIM_METHODS = {
+    "cosine": cosine,
+    "euclidean": euclidean,
+    "corr": correlation
+}
