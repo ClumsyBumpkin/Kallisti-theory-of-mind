@@ -1,0 +1,46 @@
+# Testing to see if similarity work correctly 
+
+from kallisti.similarity import cosine, euclidean, correlation
+
+a = [1, 0]
+b = [0.9, 0.1]
+c = [0, 1]
+d = [-1, 0]
+
+print("cosine(a, b)  ~ similar direction:", cosine(a, b))
+print("cosine(a, c)  ~ orthogonal:",      cosine(a, c))
+print("cosine(a, d)  ~ opposite:",        cosine(a, d))
+
+print("euclidean(a, b) similarity:", euclidean(a, b))
+print("euclidean(a, c) similarity:", euclidean(a, c))
+
+print("correlation(a, b):", correlation(a, b))
+print("correlation(a, c):", correlation(a, c))
+
+# Seems like it pulled the correct values 
+cosine(a, b)  ~ similar direction: 0.9938837236980091
+cosine(a, c)  ~ orthogonal: 0.0
+cosine(a, d)  ~ opposite: -0.9999999900000002
+euclidean(a, b) similarity: -0.1414213562373095
+euclidean(a, c) similarity: -1.4142135623730951
+correlation(a, b): 0.9999999750000005
+correlation(a, c): -0.9999999800000001
+
+# Testing memory to see if it is functioning correctly 
+
+from kallisti.memory import Memory
+
+mem = Memory()
+mem
+
+# Experiance 
+mem.add([1.0, 0.0], "A", 1.0)
+mem.add([0.9, 0.1], "A", 1.0)
+mem.add([0.0, 1.0], "B", 1.0)
+mem.add([0.1, 0.9], "B", 1.0)
+
+print("Near A:", mem.score_actions([0.95, 0.05]))
+print("Near B:", mem.score_actions([0.05, 0.95]))
+
+Near A: {'A': 1.5557186069863274, 'B': -0.22605814341408212}
+Near B: {'A': -0.22657481139376395, 'B': 1.555362175688309}
