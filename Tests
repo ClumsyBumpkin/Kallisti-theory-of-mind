@@ -34,6 +34,7 @@ mem = Memory()
 mem
 
 # Experiance 
+# I just gave random stuff :D 
 mem.add([1.0, 0.0], "A", 1.0)
 mem.add([0.9, 0.1], "A", 1.0)
 mem.add([0.0, 1.0], "B", 1.0)
@@ -42,5 +43,47 @@ mem.add([0.1, 0.9], "B", 1.0)
 print("Near A:", mem.score_actions([0.95, 0.05]))
 print("Near B:", mem.score_actions([0.05, 0.95]))
 
+
+
 Near A: {'A': 1.5557186069863274, 'B': -0.22605814341408212}
 Near B: {'A': -0.22657481139376395, 'B': 1.555362175688309}
+from kallisti.agent import KallistiAgent
+
+# Agent, first import 
+agent = KallistiAgent()
+agent
+
+<kallisti.agent.KallistiAgent at 0x76b7ecdf5f10>
+
+# Give the agent some experiances = teach them something 
+agent.observe([1.0, 0.0], "A", 1.0)
+agent.observe([0.9, 0.1], "A", 1.0)
+
+agent.observe([0.0, 1.0], "B", 1.0)
+agent.observe([0.1, 0.9], "B", 1.0)
+
+# Scores and policy check 
+print("Scores near A:", agent.action_scores([0.95, 0.05]))
+print("Policy near A:", agent.policy([0.95, 0.05]))
+
+print("Scores near B:", agent.action_scores([0.05, 0.95]))
+print("Policy near B:", agent.policy([0.05, 0.95]))
+
+# Scores and policy check 
+
+print("Scores near A:", agent.action_scores([0.95, 0.05]))
+print("Policy near A:", agent.policy([0.95, 0.05]))
+
+print("Scores near B:", agent.action_scores([0.05, 0.95]))
+print("Policy near B:", agent.policy([0.05, 0.95]))
+
+# After running the cell
+Scores near A: {'A': -1.790601645391884, 'B': -3.5724576918405706}
+Policy near A: {'A': 0.8559258987719197, 'B': 0.14407410122722425}
+Scores near B: {'A': -3.572685187131711, 'B': -1.7908274613126443}
+Policy near B: {'A': 0.14407389413639812, 'B': 0.8559261058627459}
+
+print("Greedy choice near A:", agent.choose_action([0.95, 0.05], greedy=True))
+print("Greedy choice near B:", agent.choose_action([0.05, 0.95], greedy=True))
+Greedy choice near A: A
+Greedy choice near B: B
