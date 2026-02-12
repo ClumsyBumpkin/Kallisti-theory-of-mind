@@ -57,8 +57,18 @@ Note goal: Agent uses that memory to choose action - we define the agent that's 
 - - RL learning through experiance
 
 3. ToM (theory of mind module)
-Note goal: Allows agent to go beyond its belief and simulate another agents belief or decisions.
+Note goal: Enables an agent to move beyond its own learned policy and simulate the beliefs, preferences, and likely decisions of other agents.
 - - Learning another agents preference
+  - Observes feature vectors, actions, and rewards attributed to a specific agent.
+  - Builds an internal memory representation of that agents behaviour. 
 - - Predicting feuture actions
+  - Retrievs the model agent's past experiances
+  - Compute action scores using the agent's memory
+  - Predicts the most probable next action (greedy or probabilistic.)
 - - Detecting changes in strategy
-- - Reasoning about deception or hidden moves 
+  - Recent behaviour influence prediction more strongly, however, does not overpower completely (not a strong freshness bias, i tried doing this in Test 2 simulated vector data.)
+  - Changes in strategy can be detected as shifts in activation patterns.
+- - Reasoning about deception or hidden moves
+  - Comparing predited behaviour to observed behaviour. 
+  - Systema detects mismatches.
+  - Higher level reasoning. 
