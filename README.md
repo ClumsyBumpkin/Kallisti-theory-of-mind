@@ -28,13 +28,24 @@ Note goal: Takes a new situation (feature vector), retrieves similar past experi
 - - Base level activation (power law recency)
   - Recent traces contribute more than older traces.
   - Activation follows ACT-R–style power-law decay.
-  - Weights on each trace w<sub>i</sub>​=(t−t<sub>i</sub>​)^(-d<sub>i</sub>)
+  - Weights on each trace
+  
+    <img width="314" height="110" alt="Screenshot from 2026-02-12 14 31 45@2x" src="https://github.com/user-attachments/assets/7c8051ea-abe0-49a6-adad-ab011cc9132e" />
+
   - Overall base level activation
 
     <img width="295" height="162" alt="Screenshot from 2026-02-12 14 30 42@2x" src="https://github.com/user-attachments/assets/1d9fe59e-2356-4df5-81be-5a7878c9821a" />
 
-- - Similarity between query and stored features 
-- - Scores actions from retrieved instances 
+- - Similarity between query and stored features
+  - activation = base + sim_weigth(similarity)  
+- - Scores actions from retrieved instances
+  - Expected reward is computed as a weighted average of past rewards.
+  - score(action) = activation(expected_reward)
+- - Adaptive decay
+  - New traces receive the decay parameter
+  
+    <img width="368" height="82" alt="Screenshot from 2026-02-12 14 33 36@2x" src="https://github.com/user-attachments/assets/3e71b94c-0a63-4092-8133-02737d46356d" />
+ 
 
 2. Agent module
 Note goal: Agent uses that memory to choose action - we define the agent that's going to use that memory.
