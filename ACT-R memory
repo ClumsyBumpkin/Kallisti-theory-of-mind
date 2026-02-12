@@ -1,0 +1,99 @@
+# ACT-R memory
+# adaptive decay based on previous activation
+# base - level activation 
+# weighted average similarity 
+# weighted average reward 
+
+import time
+import math
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional
+
+import numpy as np
+
+from .similarity import cosine
+
+# one memory episode 
+
+@dataclass
+class Trace:
+    features: np.ndarray
+    reward: float
+    t: float
+    d: float
+
+# Act-r memory parameters
+# phi - rate of forgetting larger number means forget faster
+# c - how strong decay changes based on prior activation 
+# sim_weight - how much similarity matters compared to base level activation 
+# min_decay - decay would not go to 0 or negative 
+# esp - tiny number to avoid division by zero when time differences are small
+
+class ACTRMemory:
+    def __init__(
+        self,
+        phi: float = 0.3,
+        c: float = 0.5,
+        sim_weight: float = 1.0,
+        min_decay: float = 1e-3,
+        eps: float = 1e-6,
+    ):
+        self.phi = float(phi)
+        self.c = float(c)
+        self.sim_weight = float(sim_weight)
+        self.min_decay = float(min_decay)
+        self.eps = float(eps)
+        self.traces_by_action: Dict[Any, List[Trace]] = {}
+    
+    def add(self, features: Iterable[float], action: Any, reward: float, t: Optional[float] = None) -> None:
+        now = time.time() if t is None else float(t)
+        x = np.asarray(features, dtype=float).reshape(-1)
+
+        traces = self.traces_by_action.get(action)
+        if traces is None:
+            traces = []
+            self.traces_by_action[action] = traces
+
+        a_prev = self._base_level_activation(traces, now)
+        d_new = self.phi + self.c * math.exp(-a_prev)
+        d_new = max(d_new, self.min_decay)
+
+        traces.append(Trace(features=x, reward=float(reward), t=now, d=d_new))
+
+# method making predictions     
+    
+    def score_actions(self, query_features: Iterable[float], now: Optional[float] = None) -> Dict[Any, float]:
+        now = time.time() if now is None else float(now)
+        q = np.asarray(query_features, dtype=float).reshape(-1)
+
+        scores: Dict[Any, float] = {}
+
+        for action, traces in self.traces_by_action.items():
+            if not traces:
+                continue
+
+            base = self._base_level_activation(traces, now)
+            w = self._trace_weights(traces, now)
+            w_sum = float(np.sum(w)) + 1e-12
+# does the current resemble the past?
+            sims = np.array([cosine(q, tr.features) for tr in traces], dtype=float)
+            sim_term = float(np.sum(w * sims) / w_sum)
+
+            rewards = np.array([tr.reward for tr in traces], dtype=float)
+            expected_reward = float(np.sum(w * rewards) / w_sum)
+
+            activation = base + self.sim_weight * sim_term
+            scores[action] = activation * expected_reward
+
+        return scores
+
+    def _trace_weights(self, traces: List[Trace], now: float) -> np.ndarray:
+        dt = np.array([max(now - tr.t, self.eps) for tr in traces], dtype=float)
+        d = np.array([max(tr.d, self.min_decay) for tr in traces], dtype=float)
+        return np.power(dt, -d)
+
+    def _base_level_activation(self, traces: List[Trace], now: float) -> float:
+        if not traces:
+            return 0.0
+        w = self._trace_weights(traces, now)
+        return float(math.log(float(np.sum(w)) + 1e-12))
