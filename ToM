@@ -1,0 +1,70 @@
+# ToM the belief system/the switch board 
+# modeling other agents behaviour
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, Optional
+
+from .agent import KallistiAgent
+from .memory import Memory
+
+
+@dataclass
+class BeliefModel:
+    agent: KallistiAgent
+
+class ToM:
+    def __init__(
+        self,
+        temperature: float = 1.0,
+        use_actr: bool = True,
+        actr_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        self.temperature = float(temperature)
+        self.use_actr = bool(use_actr)
+        self.actr_kwargs = actr_kwargs or {}
+        self.models: Dict[Any, BeliefModel] = {}
+
+# brain for the new agent
+# decision of what memory to use 
+    
+    def _make_agent(self) -> KallistiAgent:
+        if self.use_actr:
+            from .actr_memory import ACTRMemory
+            mem = ACTRMemory(**self.actr_kwargs)
+        else:
+            mem = Memory()
+        return KallistiAgent(memory=mem, temperature=self.temperature)
+
+    def add_agent(self, agent_id: Any) -> None:
+        if agent_id in self.models:
+            return
+        self.models[agent_id] = BeliefModel(agent=self._make_agent())
+
+    def observe(
+        self,
+        agent_id: Any,
+        features: Iterable[float],
+        action: Any,
+        reward: float,
+        t=None,
+    ) -> None:
+        if agent_id not in self.models:
+            self.add_agent(agent_id)
+        self.models[agent_id].agent.observe(features, action, reward, t)
+
+    def action_scores(self, agent_id: Any, query_features: Iterable[float]) -> Dict[Any, float]:
+        if agent_id not in self.models:
+            self.add_agent(agent_id)
+        return self.models[agent_id].agent.action_scores(query_features)
+
+    def policy(self, agent_id: Any, query_features: Iterable[float]) -> Dict[Any, float]:
+        if agent_id not in self.models:
+            self.add_agent(agent_id)
+        return self.models[agent_id].agent.policy(query_features)
+
+    def predict(self, agent_id: Any, query_features: Iterable[float], greedy: bool = True) -> Any:
+        if agent_id not in self.models:
+            self.add_agent(agent_id)
+        return self.models[agent_id].agent.choose_action(query_features, greedy=greedy)
