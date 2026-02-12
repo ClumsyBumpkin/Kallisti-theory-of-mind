@@ -18,10 +18,21 @@ Note goal: Defines how we measure similarity between vectors. When an agent trie
 - - Correlation → ignores magnitude focuses on shape, it is applicable i think for pattern similarity not like absolute values 
 
 2. Memory module with ACT-R-like activation
-Note goal: Takes new situation/information vector - finds similar past situation/familiarity - use them to act accordingly
+Note goal: Takes a new situation (feature vector), retrieves similar past experiences based on both recency and relevance, and uses them to score possible actions.
 - - How memories are stored and retrieved - we define memory first
-- - ACT -R principle that retreaval depends both on recency and relavance 
+  - Experiences are stored as traces grouped by action.
+  - Each trace contains: feature vector, reward, timestamp, and adaptive decay parameter.
+  - Retrieval operates over traces associated with each candidate action.
+- - ACT -R principle that retreaval depends both on recency and relavance
+  - Retrival strength depends on recency / frequency (base-level activation)as well as relevance to the current query (cosine similarity)
 - - Base level activation (power law recency)
+  - Recent traces contribute more than older traces.
+  - Activation follows ACT-R–style power-law decay.
+  - Weights on each trace w<sub>i</sub>​=(t−t<sub>i</sub>​)^(-d<sub>i</sub>)
+  - Overall base level activation
+
+    <img width="295" height="162" alt="Screenshot from 2026-02-12 14 30 42@2x" src="https://github.com/user-attachments/assets/1d9fe59e-2356-4df5-81be-5a7878c9821a" />
+
 - - Similarity between query and stored features 
 - - Scores actions from retrieved instances 
 
