@@ -1,0 +1,155 @@
+# making vector data data 
+
+import numpy as np
+
+from kallisti.agent import KallistiAgent
+from kallisti.actr_memory import ACTRMemory
+from kallisti.reduction import PCAReducer
+
+rng = np.random.default_rng(123)
+
+labels = list("ABCDEFGHI")
+
+def make_class_data(label, n, d, shift, noise=1.0):
+    mu = np.zeros(d)
+    mu[shift] = 6.0
+    X = rng.normal(loc=0.0, scale=noise, size=(n, d)) + mu
+    y = [label] * n
+    return X, y   
+
+# Attempting to simulate a larger vector data 
+# I want to see if there is an unrealistic freshness bias 
+# Does it consider both similarity and freshnes does one over take the other 
+# I want to see if the agent will select the correct action 
+
+# If similarity + base-level activation are working correctly,
+# the agent should classify each query correctly.
+
+d = 60
+
+# each raw vector has 60 dimensions 
+
+n_per = 400
+
+# 400 points per lable 
+
+Xs = []
+ys = []
+
+for i, lab in enumerate(labels):
+    Xc, yc = make_class_data(lab, n_per, d, shift=i, noise=1.2)
+    Xs.append(Xc)
+    ys += yc
+
+X = np.vstack(Xs)
+
+reducer = PCAReducer(n_components=10).fit(X)
+
+mem = ACTRMemory(phi=0.3, c=0.5, sim_weight=1.0)
+agent = KallistiAgent(memory=mem, temperature=1.0)
+
+# feed experiances into memory
+
+t0 = 1000.0
+for x, lab in zip(X, ys):
+    agent.observe(reducer.transform(x)[0], lab, 1.0, t=t0)
+
+def query_for(label, shift_idx):
+    q = rng.normal(0.0, 1.2, size=d)
+    q[shift_idx] += 6.0
+    return reducer.transform(q)[0]
+
+correct = 0
+for i, lab in enumerate(labels):
+    q = query_for(lab, i)
+    pred = agent.choose_action(q, greedy=True)
+    print(lab, "->", pred)
+    correct += (pred == lab)
+
+print("Accuracy:", correct, "/", len(labels))
+
+A -> A
+B -> B
+C -> C
+D -> D
+E -> E
+F -> F
+G -> G
+H -> H
+I -> I
+Accuracy: 9 / 9
+
+d = 60
+n_per = 400
+
+X = rng.normal(0.0, 1.0, size=(n_per * len(labels), d))
+y = sum(([lab] * n_per for lab in labels), [])
+
+reducer = PCAReducer(n_components=10).fit(X)
+
+mem = ACTRMemory(phi=0.3, c=0.5, sim_weight=1.0)
+agent = KallistiAgent(memory=mem, temperature=1.0)
+
+t = 0.0
+for x, lab in zip(X, y):
+    t += 1.0
+    agent.observe(reducer.transform(x)[0], lab, 1.0, t=t)
+
+q = reducer.transform(rng.normal(0.0, 1.0, size=d))[0]
+scores = agent.action_scores(q)
+pred = agent.choose_action(q, greedy=True)
+
+print("Prediction:", pred)
+print("Top 5 scores:", sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:5])
+
+Prediction: E
+Top 5 scores: [('E', -0.6712057485844588), ('B', -0.6900249622814293), ('D', -0.700956793779608), ('H', -0.7015476821940423), ('G', -0.7040345470414224)]
+
+d = 60
+n_per = 400
+
+Xs = []
+ys = []
+
+for i, lab in enumerate(labels):
+    Xc, yc = make_class_data(lab, n_per, d, shift=i, noise=1.2)
+    Xs.append(Xc)
+    ys += yc
+
+X = np.vstack(Xs)
+reducer = PCAReducer(n_components=10).fit(X)
+
+mem = ACTRMemory(phi=0.3, c=0.5, sim_weight=1.0)
+agent = KallistiAgent(memory=mem, temperature=1.0)
+
+t = 1000.0
+for x, lab in zip(X, ys):
+    t += 1.0
+    agent.observe(reducer.transform(x)[0], lab, 1.0, t=t)
+
+qA = query_for("A", 0)
+
+pred_before = agent.choose_action(qA, greedy=True)
+scores_before = agent.action_scores(qA)
+
+print("Before freshness injection:", pred_before)
+print("Top 5:", sorted(scores_before.items(), key=lambda kv: kv[1], reverse=True)[:5])
+
+t_inject = t + 10000.0
+for _ in range(200):
+    xI = rng.normal(0.0, 1.2, size=d)
+    xI[8] += 6.0
+    agent.observe(reducer.transform(xI)[0], "I", 1.0, t=t_inject)
+    t_inject += 1.0
+
+pred_after = agent.choose_action(qA, greedy=True)
+scores_after = agent.action_scores(qA)
+
+print("\nAfter making I super fresh:", pred_after)
+print("Top 5:", sorted(scores_after.items(), key=lambda kv: kv[1], reverse=True)[:5])
+
+Before freshness injection: A
+Top 5: [('A', -0.04605586950858866), ('I', -0.5588089298968366), ('D', -0.5598765621567754), ('C', -0.6558349204258825), ('E', -0.7437503961053311)]
+
+After making I super fresh: A
+Top 5: [('A', -0.04605586951641895), ('I', -0.12033557568769981), ('D', -0.5598765621646059), ('C', -0.6558349204337135), ('E', -0.743750396113161)]
