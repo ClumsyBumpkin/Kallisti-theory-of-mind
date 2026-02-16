@@ -3,11 +3,13 @@ Python package. Lets user plug in vectorized data about situations, states, and 
 
 The package will have 3 to 4 pieces 
 
-Dimensionality reduction first: 
+Dimensionality reduction
+Note goal: Compress high-dimensional input vectors into a smaller, information-preserving representation before storing them in memory.
 - - Same package, different module. 
-- - We use it as a processing step before the data enters memory. 
-- - We feed information to brain voxels/vectors. 
-- - Dimensionality reduction compresses into a smaller vector. 
+- - Acts as a processing step before memory encoding. 
+- - Reduces noise and redudancy in raw future vectors.
+  - Learns principal components of the data set. 
+- - Improves stability of similarity comparison in memory retreval. 
 - - The vector becomes the feature for storage to memory.
 
 1. Similarity Utility Module (similarity.py) 
